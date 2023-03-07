@@ -1,5 +1,5 @@
-const Book = require('../models/book');
-exports.createBook = async (req, res) => {
+import Book from '../models/book.js'
+export const createBook = async (req, res) => {
   try {
     const book = new Book({
       title: req.body.title,
@@ -14,7 +14,7 @@ exports.createBook = async (req, res) => {
   }
 };
 
-exports.getAllBooks = async (req, res) => {
+export const getAllBooks = async (req, res) => {
 // Book.find((err,books)=>{
 // if(!err){
 //   res.json(books)
@@ -28,7 +28,7 @@ exports.getAllBooks = async (req, res) => {
   }
 };
 
-exports.getBookByISBN = async (req, res) => {
+export const getBookByISBN = async (req, res) => {
   try {
     const book = await Book.findOne({ISBN:req.params.isbn});
     if (!book) return res.status(404).send('Book not found');
@@ -38,7 +38,7 @@ exports.getBookByISBN = async (req, res) => {
   }
 };
 
-exports.getBookByAuthor = async (req, res) => {
+export const getBookByAuthor = async (req, res) => {
   try {
     const book = await Book.findOne({author:req.params.author});
     if (!book) return res.status(404).send('Book not found');
@@ -47,7 +47,7 @@ exports.getBookByAuthor = async (req, res) => {
     res.status(500).send("Unknown server error");
   }
 };
-exports.getBookByTitle = async (req, res) => {
+export const getBookByTitle = async (req, res) => {
   try {
     const book = await Book.findOne({title:req.params.title});
     if (!book) return res.status(404).send('Book not found');
@@ -56,23 +56,21 @@ exports.getBookByTitle = async (req, res) => {
     res.status(500).send("Unknown server error");
   }
 };
-exports.getBookReviewByISBN = async (req, res) => {
+export const getBookReviewByISBN = async (req, res) => {
   try {
     const book = await Book.findOne({ISBN:req.params.isbn},{reviews:1});
     if (!book) return res.status(404).send('Book not found');
     res.status(200).send(book);
   } catch (error) {
-    console.log(error)
     res.status(500).send("Unknown server error");
   }
 };
-exports.updateBookReviewByISBN = async (req, res) => {
+export const updateBookReviewByISBN = async (req, res) => {
   try {
     let updateReview
     let findBy
     const reviewExist=await Book.findOne({ISBN:req.params.isbn,
       "reviews.username":req.user.username})
-      console.log(reviewExist,req.query.review)
       if(reviewExist){
       findBy={ISBN:req.params.isbn,"reviews.username":req.user.username}
       updateReview={$set:{"reviews.$.feedback":req.query.review}}
@@ -89,7 +87,7 @@ exports.updateBookReviewByISBN = async (req, res) => {
     res.status(500).send("Unknown server error");
   }
 };
-exports.deleteBookReviewByISBN = async (req, res) => {
+export const deleteBookReviewByISBN = async (req, res) => {
   try {
     await Book.updateOne({ISBN:req.params.isbn},
     {$pull:{reviews:{username:req.user.username}}})

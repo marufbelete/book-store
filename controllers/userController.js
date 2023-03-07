@@ -1,8 +1,8 @@
-const User = require('../models/user');
-const bcrypt = require('bcrypt');
-const jwt=require('jsonwebtoken')
+import User from '../models/user.js'
+import bcrypt from 'bcrypt'
+import {generateToken,removeRefreshToken,saveRefershToken} from '../helpers/manageToken.js';
 
-exports.login = async (req, res) => {
+export const login = async (req, res) => {
   try {
     const { username, password } = req.body;
     if (!username || !password) {
@@ -14,14 +14,19 @@ exports.login = async (req, res) => {
     if (!isPasswordValid) {
       return res.status(401).send('Incorrect username or password');
     }
-    const token=jwt.sign({username:user.username},"some secret")
-    res.status(200).send({ user: user,success: true,token });
+    const payload={username:user.username,sub:user._id}
+    const token=generateToken(payload)
+    const user_info=await saveRefershToken(user._id,token.refresh_token)
+    res.cookie('access_token',token.access_token)
+    res.cookie('refresh_token',token.refresh_token)
+    return res.status(200).json({ user: user_info,success: true});
+
   } catch (error) {
     res.status(500).send("Unknown server error");
   }
 };
 
-exports.register = async (req, res) => {
+export const register = async (req, res) => {
   try {
     const { username, password } = req.body;
     const existingUser = await User.findOne({ username });
@@ -34,7 +39,20 @@ exports.register = async (req, res) => {
     await user.save();
     res.status(201).send("Customer successfully registered, now you can login");
   } catch (error) {
-    res.status(500).send("Unknown server error");
+    res.status(500).send("Internal server error");
   }
 };
 
+export const logout=async(req,res,next)=>{
+  try {
+    const userId=req?.user?.sub
+    if(userId)
+    await removeRefreshToken(userId)
+    res.clearCookie("access_token")
+    res.clearCookie("refresh_token")
+    return res.status(201).json({message:"user Loged-out successfully",status:true})
+  } catch (error) {
+    return res.status(500).json({message:"Internal server error",
+    error:error.message,});
+  }
+}
